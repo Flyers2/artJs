@@ -5,7 +5,8 @@ var canvas = $('#canvas'),
     ctx = canvas[0].getContext('2d'),
     lines = [],
     lineArray = [],
-    redoArray = [];
+    redoArray = [],
+    color = 'black';
 
 sizeCanvas();
 $(window).resize(sizeCanvas);
@@ -20,24 +21,20 @@ function sizeCanvas() {
         bodyHeight = theBody.innerHeight();
     canvas.attr("width", bodyWidth - 40);
     canvas.attr("height", bodyHeight - 100);
+    redraw(lines);
 }
 function mouseBind() {
     canvas.mousedown(function(e) {
         ctx.beginPath();
         ctx.moveTo(e.offsetX, e.offsetY);
         console.log(e.offsetX, e.offsetY);//move to defines beginning of line lineto is the end of line and stroke draws it
-
-        ctx.fillRect(e.offsetX, e.offsetY, 1, 1);//need to change the rect to thickness of line
+        //ctx.fillRect(e.offsetX, e.offsetY, 1, 1);//need to change the rect to thickness of line
         released = false;
         drawLine();
-
-    });
+    })
 }
 ;
 
-
-
-mouseBind();
 
 $('#clear').click(function() {
     eraseCanvas();
@@ -52,30 +49,39 @@ $('#redo').click(function() {
 function drawLine() {
 
     canvas.mousemove(function(e) {
-
         if (!released) {
             ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.strokeStyle = color;
             ctx.stroke();
-            point = {X: e.offsetX, Y: e.offsetY};
+            var point = {X: e.offsetX, Y: e.offsetY,color:color};
             lineArray.push(point);
-
 
         }
     });
+    canvas.mouseleave(function(e) {
+        stopDraw();
+    });
     canvas.mouseup(function(e) {
-        canvas.unbind();
-        lines.push(lineArray);
-        lineArray = [];
-        released = true;
-        linesStored = JSON.stringify(lines);
-        localStorage.setItem('savedLines', linesStored);
-        mouseBind();
+        console.log("up");
+        stopDraw();
     });
 
 
 }
+//canvas.mouseenter(function(){
+//    if(mouseLeft=true && is mouse currently down then startdraw)
+//})
+function stopDraw() {
+    canvas.unbind();
+    lines.push(lineArray);
+    lineArray = [];
+    released = true;
+    linesStored = JSON.stringify(lines);
+    localStorage.setItem('savedLines', linesStored);
+    mouseBind();
+}
 function undo() {
-    if(lines.length>0){
+    if (lines.length > 0) {
         redoArray.push(lines.pop());
         localStorage.setItem('savedLines', JSON.stringify(lines));
         ctx.clearRect(0, 0, canvas[0].width, canvas[0].height);
@@ -83,13 +89,13 @@ function undo() {
     }
 }
 function redo() {
-    temp = redoArray.pop()
-    tempArray=[temp];
-    if(tempArray){
+    temp = redoArray.pop();
+    if (temp) {
+        tempArray = [temp];
         lines.push(temp);
         console.log(tempArray[0]);
         localStorage.setItem('savedLines', JSON.stringify(lines));
-        redraw(tempArray);
+        redraw(lines);
     }
 }
 function eraseCanvas() {
@@ -100,12 +106,14 @@ function eraseCanvas() {
     ctx.clearRect(0, 0, canvas[0].width, canvas[0].height)
 }
 function redraw(arrayOfLines) {
-    lines = [];
+    lines = [];//without this lines will just add all the stuff on top of what it has
+   
     $.each(arrayOfLines, function(i, line) {
         ctx.beginPath();
         ctx.moveTo(line[0].X, line[0].Y);
         $.each(line, function(j, point) {
             ctx.lineTo(point.X, point.Y);
+             ctx.strokeStyle = point.color;
             ctx.stroke();
             lineArray.push(point);
         });
@@ -116,6 +124,26 @@ function redraw(arrayOfLines) {
 var localSt = window.localStorage["savedLines"];
 if (localSt) {
     linesArray = JSON.parse(localSt);
+
     redraw(linesArray);
 
+    //$('#red').css('background-color', 'red');
+
 }
+//$('.colorClass').css("background-color",$('.colorClass')[0].id);
+$('.colorClass').each(function() {
+    $(this).css("background-color", this.id);
+    $(this).click(function() {
+       color = this.value;
+        ctx.strokeStyle=color;
+        $('input[type=color]').val(color)
+    });
+});
+
+$('input[type=color]').click(function() {
+    color=this.value;
+    ctx.strokeStyle=color;
+})
+
+mouseBind();
+ 
