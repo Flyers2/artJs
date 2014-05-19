@@ -50,12 +50,17 @@ function drawLine() {
 
     canvas.mousemove(function(e) {
         if (!released) {
+            deleteStack = true;
             ctx.lineTo(e.offsetX, e.offsetY);
             ctx.strokeStyle = color;
             ctx.stroke();
-            var point = {X: e.offsetX, Y: e.offsetY,color:color};
+            var point = {X: e.offsetX, Y: e.offsetY, color: color};
             lineArray.push(point);
 
+        }
+        if (deleteStack === true) {
+            redoArray = [];
+            (deleteStack === false);
         }
     });
     canvas.mouseleave(function(e) {
@@ -78,6 +83,9 @@ function stopDraw() {
     released = true;
     linesStored = JSON.stringify(lines);
     localStorage.setItem('savedLines', linesStored);
+    $.post('savedArt.php', {drawings: linesStored}, function(data) {
+        console.log(data + " this was data")
+    });
     mouseBind();
 }
 function undo() {
@@ -102,18 +110,16 @@ function eraseCanvas() {
     lines = [];
     lineArray = [];
     localStorage.clear();
-    console.log(localSt);
     ctx.clearRect(0, 0, canvas[0].width, canvas[0].height)
 }
 function redraw(arrayOfLines) {
     lines = [];//without this lines will just add all the stuff on top of what it has
-   
     $.each(arrayOfLines, function(i, line) {
         ctx.beginPath();
         ctx.moveTo(line[0].X, line[0].Y);
         $.each(line, function(j, point) {
             ctx.lineTo(point.X, point.Y);
-             ctx.strokeStyle = point.color;
+            ctx.strokeStyle = point.color;
             ctx.stroke();
             lineArray.push(point);
         });
@@ -121,29 +127,30 @@ function redraw(arrayOfLines) {
         lineArray = [];
     });
 }
-var localSt = window.localStorage["savedLines"];
-if (localSt) {
-    linesArray = JSON.parse(localSt);
+function drawFromLocal() {
+    var localSt = window.localStorage["savedLines"];
+    if (localSt) {
+        linesArray = JSON.parse(localSt);
 
-    redraw(linesArray);
-
-    //$('#red').css('background-color', 'red');
-
+        redraw(linesArray);
+    }
 }
-//$('.colorClass').css("background-color",$('.colorClass')[0].id);
+//drawFromLocal();
+
+
 $('.colorClass').each(function() {
     $(this).css("background-color", this.id);
     $(this).click(function() {
-       color = this.value;
-        ctx.strokeStyle=color;
-        $('input[type=color]').val(color)
+        color = this.value;
+        ctx.strokeStyle = color;
+        $('input[type=color]').val(color);
     });
 });
 
-$('input[type=color]').click(function() {
-    color=this.value;
-    ctx.strokeStyle=color;
-})
+$('input[type=color]').change(function() {
+    color = this.value;
+    ctx.strokeStyle = color;
+});
 
 mouseBind();
  
