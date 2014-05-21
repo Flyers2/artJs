@@ -46,6 +46,9 @@ $('#undo').click(function() {
 $('#redo').click(function() {
     redo();
 });
+$('#line').click(function() {
+    getDrawingsSQL();
+});
 function drawLine() {
 
     canvas.mousemove(function(e) {
@@ -78,13 +81,14 @@ function drawLine() {
 //})
 function stopDraw() {
     canvas.unbind();
+    lineToSQL =JSON.stringify(lineArray)
     lines.push(lineArray);
     lineArray = [];
     released = true;
     linesStored = JSON.stringify(lines);
     localStorage.setItem('savedLines', linesStored);
-    $.post('savedArt.php', {drawings: linesStored}, function(data) {
-        console.log(data + " this was data")
+    $.post('savedArt.php', {drawings: lineToSQL}, function(data) {
+        console.log(data + " this was data sent to savedArt.php")
     });
     mouseBind();
 }
@@ -114,15 +118,22 @@ function eraseCanvas() {
 }
 function redraw(arrayOfLines) {
     lines = [];//without this lines will just add all the stuff on top of what it has
+    lineArray=[];//without this when called from sql the linearray still has the stuff in it   
     $.each(arrayOfLines, function(i, line) {
         ctx.beginPath();
+        color=line[0].color;
+        ctx.strokeStyle = color;
         ctx.moveTo(line[0].X, line[0].Y);
+        console.log("line[0].X, line[0].Y "+line[0].X+" "+ line[0].Y)
         $.each(line, function(j, point) {
+            
+                console.log("in line "+i+"point: "+point.X+" "+point.Y)
             ctx.lineTo(point.X, point.Y);
-            ctx.strokeStyle = point.color;
-            ctx.stroke();
-            lineArray.push(point);
+            
+            //ctx.stroke();
+          lineArray.push(point);   
         });
+        ctx.stroke();
         lines.push(lineArray);
         lineArray = [];
     });
@@ -136,7 +147,21 @@ function drawFromLocal() {
     }
 }
 //drawFromLocal();
-
+function getDrawingsSQL(){
+    lines=[];
+    $.getJSON('getDrawings.php',function(data){
+        console.log(data);
+        $.each(data,function(i,inData){
+            parsedInData = null;
+            parsedInData = JSON.parse(inData.fancyArt);
+            console.log(parsedInData);
+            lineArray=null;
+            lineArray = parsedInData;
+            lines.push(lineArray);
+        }); 
+        redraw(lines);
+    });
+}
 
 $('.colorClass').each(function() {
     $(this).css("background-color", this.id);
