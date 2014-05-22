@@ -31,7 +31,7 @@ function mouseBind() {
         //ctx.fillRect(e.offsetX, e.offsetY, 1, 1);//need to change the rect to thickness of line
         released = false;
         drawLine();
-    })
+    });
 }
 ;
 
@@ -46,9 +46,35 @@ $('#undo').click(function() {
 $('#redo').click(function() {
     redo();
 });
-$('#line').click(function() {
+
+$('#load').click(function() {
     getDrawingsSQL();
 });
+$('#save').click(function() {
+    //alert("click");
+    var saveDialog = $('<div><div>');
+    saveDialog.append('enter your name<input type="text" id ="userName">\n\drawing name<input type="text" id ="artName">');
+
+
+    $(saveDialog).dialog({
+        title: "save your art",
+        height: 260,
+        width: 460,
+        modal: true,
+        hide: false,
+        buttons: [{text: "cancel", click: function () {
+                    $(this).dialog("close");
+        }
+            }, {text: "submit", click: function () {
+            var userName = (document.getElementById("userName").value),
+                artName = ($('#artName').val());   
+                }
+            }
+             ]
+    });
+    //$.saveDialog.css(backgroundColor='#202020');
+});
+
 function drawLine() {
 
     canvas.mousemove(function(e) {
@@ -81,7 +107,7 @@ function drawLine() {
 //})
 function stopDraw() {
     canvas.unbind();
-    lineToSQL =JSON.stringify(lineArray)
+    lineToSQL = JSON.stringify(lineArray)
     lines.push(lineArray);
     lineArray = [];
     released = true;
@@ -118,20 +144,21 @@ function eraseCanvas() {
 }
 function redraw(arrayOfLines) {
     lines = [];//without this lines will just add all the stuff on top of what it has
-    lineArray=[];//without this when called from sql the linearray still has the stuff in it   
+    lineArray = [];//without this when called from sql the linearray still has the stuff in it   
     $.each(arrayOfLines, function(i, line) {
         ctx.beginPath();
-        color=line[0].color;
+        console.log("testing color " + line[0].color);
+        color = line[0].color;
         ctx.strokeStyle = color;
         ctx.moveTo(line[0].X, line[0].Y);
-        console.log("line[0].X, line[0].Y "+line[0].X+" "+ line[0].Y)
+        console.log("line[0].X, line[0].Y " + line[0].X + " " + line[0].Y)
         $.each(line, function(j, point) {
-            
-                console.log("in line "+i+"point: "+point.X+" "+point.Y)
+
+            console.log("in line " + i + "point: " + point.X + " " + point.Y + " " + color)
             ctx.lineTo(point.X, point.Y);
-            
+
             //ctx.stroke();
-          lineArray.push(point);   
+            lineArray.push(point);
         });
         ctx.stroke();
         lines.push(lineArray);
@@ -147,18 +174,18 @@ function drawFromLocal() {
     }
 }
 //drawFromLocal();
-function getDrawingsSQL(){
-    lines=[];
-    $.getJSON('getDrawings.php',function(data){
+function getDrawingsSQL() {
+    lines = [];
+    $.getJSON('getDrawings.php', function(data) {
         console.log(data);
-        $.each(data,function(i,inData){
+        $.each(data, function(i, inData) {
             parsedInData = null;
             parsedInData = JSON.parse(inData.fancyArt);
             console.log(parsedInData);
-            lineArray=null;
+            lineArray = null;
             lineArray = parsedInData;
             lines.push(lineArray);
-        }); 
+        });
         redraw(lines);
     });
 }
